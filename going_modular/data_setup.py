@@ -4,13 +4,32 @@ from typing import Tuple, List
 import numpy as np
 
 
-def create_transforms(image_size: int = 64):
+from torchvision import transforms
+from typing import Tuple
+
+def create_transforms(
+    image_size: int = 64,
+    hflip_p: float = 0.5,
+    rotation_deg: float = 10.0
+) -> Tuple[transforms.Compose, transforms.Compose]:
+    """
+    Creates train and test transforms with configurable augmentation.
+    """
+
     train_transforms = transforms.Compose([
         transforms.Resize((image_size, image_size)),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomRotation(10),
+        transforms.RandomHorizontalFlip(p=hflip_p),
+        transforms.RandomRotation(rotation_deg),
         transforms.ToTensor()
     ])
+
+    test_transforms = transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor()
+    ])
+
+    return train_transforms, test_transforms
+
 
     test_transforms = transforms.Compose([
         transforms.Resize((image_size, image_size)),
