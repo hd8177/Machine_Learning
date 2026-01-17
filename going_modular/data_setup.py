@@ -1,9 +1,10 @@
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Subset
 from typing import Tuple, List
+import numpy as np
+
 
 def create_transforms(image_size: int = 64):
-    """Match your notebook: augmentation for train, plain resize for test/val."""
     train_transforms = transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.RandomHorizontalFlip(p=0.5),
@@ -28,42 +29,53 @@ def create_dataloaders_from_single_folder(
     seed: int = 42
 ) -> Tuple[DataLoader, DataLoader, List[str]]:
     """
-    Matches your notebook logic:
-    - Use ONE folder (data/train)
-    - Create two ImageFolder datasets with different transforms
-    - Split each into train + val using the SAME split sizes
+    Uses ONE folder and ONE split of indices.
+    Applies different transforms via separate base datasets.
     """
+
+    # 1. Transforms
     train_tfms, test_tfms = create_transforms(image_size=image_size)
 
-    # Two datasets pointing at same folder, different transforms (exactly like your cell 13)
+    # 2. Base datasets (same files, different transforms)
     train_data_base = datasets.ImageFolder(root=data_dir, transform=train_tfms)
     test_data_base  = datasets.ImageFolder(root=data_dir, transform=test_tfms)
 
     class_names = train_data_base.classes
 
-    # Split sizes
+    # 3. Create indices ONCE
     total_len = len(train_data_base)
     train_len = int(total_len * train_split)
-    val_len = total_len - train_len
 
-    # Deterministic split
-    generator = __import__("torch").Generator().manual_seed(seed)
+    indices = np.arange(total_len)
+    np.random.seed(seed)
+    np.random.shuffle(indices)
 
-    train_dataset, _ = random_split(train_data_base, [train_len, val_len], generator=generator)
-    _, val_dataset   = random_split(test_data_base,  [train_len, val_len], generator=generator)
+    train_idx = indices[:train_len]
+    val_idx   = indices[train_len:]
 
+    # 4. Subsets (this is the key fix)
+    train_dataset = Subset(train_data_base, train_idx)
+    val_dataset   = Subset(test_data_base,  val_idx)
+
+    # 5. DataLoaders
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers
     )
+
     val_loader = DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers
     )
 
     return train_loader, val_loader, class_names
 
 
 def create_test_transform(image_size: int = 64):
-    """Matches your later inference cells (cell 33): resize + ToTensor."""
     return transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.ToTensor()
