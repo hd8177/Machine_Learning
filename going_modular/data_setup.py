@@ -31,14 +31,6 @@ def create_transforms(
     return train_transforms, test_transforms
 
 
-    test_transforms = transforms.Compose([
-        transforms.Resize((image_size, image_size)),
-        transforms.ToTensor()
-    ])
-
-    return train_transforms, test_transforms
-
-
 def create_dataloaders_from_single_folder(
     data_dir: str,
     image_size: int = 64,
@@ -84,14 +76,14 @@ def create_dataloaders_from_single_folder(
         num_workers=num_workers
     )
 
-    val_loader = DataLoader(
-        val_dataset,
+    test_loader = DataLoader(
+        test_dataset,
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers
     )
 
-    return train_loader, val_loader, class_names
+    return train_loader, test_loader, class_names
 
 
 def create_test_transform(image_size: int = 64):
