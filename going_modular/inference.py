@@ -23,7 +23,11 @@ def predict_single_image(
     with torch.inference_mode():
         logits = model(img_tensor)
         pred_idx = logits.argmax(dim=1).item()
-
+    if show:
+        plt.imshow(img)
+        plt.title(f"Pred: {class_names[pred_idx]}")
+        plt.axis("off")
+        plt.show()
     return class_names[pred_idx]
 
 
